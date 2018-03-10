@@ -1,5 +1,5 @@
-import {makeGenesisBlock, isBlockValid, isDataValid} from './block';
-import fs from 'fs';
+const {makeGenesisBlock, isBlockValid, isDataValid} = require('./block');
+const fs = require('fs');
 
  function loadChain () {
     if (! fs.existsSync('chain.json')) {

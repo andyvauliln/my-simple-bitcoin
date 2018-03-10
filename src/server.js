@@ -20,6 +20,8 @@ app.get('/peers', (req, res) => {
     res.send(store.peers);
 });
 
+app.get('/blocks-after/:index', (req, res) => res.send(JSON.stringify(store.blocksAfter(req.params.index))));
+
 app.post('/add-peer', (req, res) => {
     store.addPeer(req.body.peer);
     res.send();

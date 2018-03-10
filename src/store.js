@@ -2,7 +2,8 @@ const {loadChain, saveChain, isChainValid} = require('./util/chain');
 const {isDataValid, isBlockValid} = require('./util/block');
 
 const store = {
-    difficulty: 5,
+
+    difficulty: 10000, // The less value the bigger difficulty
 
     chain: loadChain(),
 
@@ -12,6 +13,11 @@ const store = {
 
     lastBlock () {
         return this.chain[this.chain.length - 1];
+    },
+    
+    blocksAfter (index) {
+        if (index >= this.chain.length) return [];
+        return this.chain.slice(index);
     },
 
     addBlock (block) {

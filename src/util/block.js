@@ -2,18 +2,22 @@ const CryptoJS = require('crypto-js');
 const Joi = require('joi');
 const {spawn} = require('threads');
 
+
+const blockSchema = Joi.object().keys({
+    index: Joi.number(),
+    prevHash: Joi.string().hex().length(64),
+    time: Joi.number(),
+    transactions: Joi.array(),
+    nonce: Joi.number(),
+    hash: Joi.string().hex().length(64),
+});
+
  function isDataValid(block) {
-    return Joi.validate(block, Joi.object().keys({
-        index: Joi.number(),
-        prevHash: Joi.string(),
-        time: Joi.number(),
-        transactions: Joi.array(),
-        nonce: Joi.number(),
-        hash: Joi.string(),
-    }));
+    return Joi.validate(block, blockSchema);
 }
 
  function isBlockValid (previousBlock, block, difficulty) {
+    const blockDifficulty = getDifficulty(block.hash);
     if (previousBlock.index + 1 !== block.index) {
         console.log('Invalid index');
         return false;
@@ -23,15 +27,13 @@ const {spawn} = require('threads');
     } else if (calculateHash(block) !== block.hash) {
         console.log('Invalid hash: ' + calculateHash(block) + ' ' + block.hash);
         return false;
-    } else if (block.hash.substring(0, difficulty) !== Array(difficulty + 1).join('0')) {
-        console.log('Invalid hash difficulty, must be: ' + difficulty + ', hash: ' + block.hash);
-        return false;
+    } else if (blockDifficulty > difficulty) {
+        console.log('Invalid hash difficulty, must be: ' + difficulty + ', but has: ' + blockDifficulty);
     }
-
     return true;
 }
 
-export function calculateHash ({index, prevHash, timestamp, transactions, nonce}) {
+ function calculateHash ({index, prevHash, timestamp, transactions, nonce}) {
     return CryptoJS.SHA256(JSON.stringify({index, prevHash, timestamp, transactions, nonce})).toString();
 }
 
@@ -63,7 +65,7 @@ export function calculateHash ({index, prevHash, timestamp, transactions, nonce}
         const util = require(__dirname + '/block');
 
         const zeros = Array(difficulty + 1).join('0');
-        while (block.hash.substring(0, difficulty) !== zeros) {
+        while (util.getDifficulty(block.hash) >= difficulty) {
             block.nonce++;
             block.hash = util.calculateHash(block);
             if (block.nonce % 100000 === 0) progress('100K hashes');
@@ -75,4 +77,8 @@ export function calculateHash ({index, prevHash, timestamp, transactions, nonce}
         .promise();
 }
 
-module.exports = {isDataValid, isBlockValid, calculateHash, makeGenesisBlock, mineBlock};
+function getDifficulty (hash) {
+    return parseInt(hash.substring(0, 8), 16);
+}
+
+module.exports = {blockSchema, isDataValid, isBlockValid, calculateHash, makeGenesisBlock, getDifficulty, mineBlock};
